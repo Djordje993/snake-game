@@ -1,0 +1,205 @@
+﻿<!DOCTYPE html>
+<html lang="sr">
+<head>
+	<title>Naslov</title>
+	<meta charset="UTF-8">
+	<style>
+		body{
+			background-color: black;
+		}
+		#mapa{
+			margin: 20px auto;
+			border: 1px solid #fff;
+			width: 770px;
+			display: flex;
+			flex-wrap: wrap;
+		}
+		.polje{
+			height: 20px;
+			width: 20px;
+			border: 1px solid #ddd;
+		}
+		#konzola{
+			color: #fff;
+			text-align: center;
+			font-size: 2rem;
+		}
+		#pocetno-dugme{
+			font-size: 3rem;
+			padding: 10px;
+			cursor: pointer;
+		}
+	</style>
+</head>
+<body>
+	<div id="mapa" style="display: none;"></div>
+	<p id="konzola">Kreci se uz pomoc W,A,S,D<br><button id="pocetno-dugme" onclick="kreni()">Zapocni Igru</button></p>
+	<script>
+		var mapa=[];
+		var pravac="";
+		var brojPoena=0;
+		var tajmer;
+		var hranaTajmer;
+		var staraHrana;
+		var pravac="d";
+		var zmijica={
+			glava:[10,5],
+			telo:[
+				[10,4],
+				[10,3],
+				[10,2],
+				[10,1]
+			],
+			osvezi: function(nova){
+				for(var i=this.telo.length-1; i>0; i--){
+					this.telo[i][0]=this.telo[i-1][0];
+					this.telo[i][1]=this.telo[i-1][1];
+				}
+				this.telo[0][0]=this.glava[0];
+				this.telo[0][1]=this.glava[1];
+				this.glava=nova;
+			},
+			pojedi: function(nova){
+				this.telo.unshift(this.glava);
+				this.glava=nova;
+				clearInterval(hranaTajmer);
+				pojaviHranu();
+				brojPoena++;
+			},
+			prikazi: function(){
+				mapa[this.glava[0]][this.glava[1]]=2;
+				for(var i=0; i<this.telo.length-1; i++){
+					mapa[this.telo[i][0]][this.telo[i][1]]=1;
+				}
+				mapa[this.telo[this.telo.length-1][0]][this.telo[this.telo.length-1][1]]=0;
+			}
+		};
+
+		for(var i=0; i<20; i++){
+			var niz=[];
+			for(var j=0; j<35; j++){
+				niz.push(0);
+				var div=document.createElement("div");
+				div.id="p"+i+"_"+j;
+				div.classList.add('polje');
+				document.getElementById('mapa').appendChild(div);
+			}
+			mapa.push(niz);
+		}
+
+		function osveziPrikaz(){
+			document.getElementById('konzola').innerHTML="Broj poena: "+brojPoena;
+			for(var i=0; i<mapa.length; i++){
+				for(var j=0; j<mapa[i].length; j++){
+					if(mapa[i][j]==3){
+						document.getElementById("p"+i+"_"+j).style.backgroundColor="#cf0ccf";
+					}
+					else if(mapa[i][j]==2){
+						document.getElementById("p"+i+"_"+j).style.backgroundColor="#178519";
+					}
+					else if(mapa[i][j]==1){
+						document.getElementById("p"+i+"_"+j).style.backgroundColor="#76ac76";
+					}
+					else{
+						document.getElementById("p"+i+"_"+j).style["background-color"]="black";
+					}
+				}
+			}
+		}
+
+		function kreni(){
+			document.getElementById('mapa').style.display="";
+			document.getElementById('konzola').innerHTML="";
+			mapa[zmijica.glava[0]][zmijica.glava[1]]=1;
+			osveziPrikaz();
+			pojaviHranu();
+			tajmer=setInterval(function(){
+				uPokretu(pravac);
+			},150);
+		}
+
+		function uPokretu(n){
+			if(n=="d"){
+				if(zmijica.glava[1]+1>=mapa[0].length){kraj();return;}
+				if(proveriSudar([zmijica.glava[0],zmijica.glava[1]+1])){kraj();return;}
+				if(mapa[zmijica.glava[0]][zmijica.glava[1]+1]==3){
+					zmijica.pojedi([zmijica.glava[0],zmijica.glava[1]+1]);
+				}
+				else{
+					zmijica.osvezi([zmijica.glava[0],zmijica.glava[1]+1]);
+				}
+			}
+			if(n=="s"){
+				if(zmijica.glava[0]+1>=mapa.length){kraj();return;}
+				if(proveriSudar([zmijica.glava[0]+1,zmijica.glava[1]])){kraj();return;}
+				if(mapa[zmijica.glava[0]+1][zmijica.glava[1]]==3){
+					zmijica.pojedi([zmijica.glava[0]+1,zmijica.glava[1]]);
+				}
+				else{
+					zmijica.osvezi([zmijica.glava[0]+1,zmijica.glava[1]]);
+				}
+			}
+			if(n=="a"){
+				if(zmijica.glava[1]-1<0){kraj();return;}
+				if(proveriSudar([zmijica.glava[0],zmijica.glava[1]-1])){kraj();return;}
+				if(mapa[zmijica.glava[0]][zmijica.glava[1]-1]==3){
+					zmijica.pojedi([zmijica.glava[0],zmijica.glava[1]-1]);
+				}
+				else{
+					zmijica.osvezi([zmijica.glava[0],zmijica.glava[1]-1]);
+				}
+			}
+			if(n=="w"){
+				if(zmijica.glava[0]-1<0){kraj();return;}
+				if(proveriSudar([zmijica.glava[0]-1,zmijica.glava[1]])){kraj();return;}
+				if(mapa[zmijica.glava[0]-1][zmijica.glava[1]]==3){
+					zmijica.pojedi([zmijica.glava[0]-1,zmijica.glava[1]]);
+				}
+				else{
+					zmijica.osvezi([zmijica.glava[0]-1,zmijica.glava[1]]);
+				}
+			}
+			zmijica.prikazi();
+			osveziPrikaz();
+		}
+
+		document.onkeydown= function(e){
+			if(e.key=="d"){if(pravac=="a"){return;}pravac="d"}
+			if(e.key=="s"){if(pravac=="w"){return;}pravac="s"}
+			if(e.key=="a"){if(pravac=="d"){return;}pravac="a"}
+			if(e.key=="w"){if(pravac=="s"){return;}pravac="w"}
+		}
+
+		function proveriSudar(nova){
+			for(var i=0; i<zmijica.telo.length-1; i++){
+				if(zmijica.telo[i][0]==nova[0] && zmijica.telo[i][1]==nova[1]){
+					return true;
+				}
+			}
+			return false;
+		}
+
+		function pojaviHranu(){
+			hranaTajmer=setInterval(function(){
+				if(staraHrana){mapa[staraHrana[0]][staraHrana[1]]=0;}
+				var neispravno=true;
+				while(neispravno){
+					var rndX=Math.floor(Math.random()*mapa.length);
+					var rndY=Math.floor(Math.random()*mapa[0].length);
+					if(mapa[rndX][rndY]==1 || mapa[rndX][rndY]==2){continue;}
+					neispravno=false;
+				}
+				mapa[rndX][rndY]=3;
+				staraHrana=[rndX,rndY];
+			},5000);
+		}
+
+		function kraj(){
+			clearInterval(tajmer);
+			clearInterval(hranaTajmer);
+			document.getElementById('konzola').innerHTML="KRAJ<br>Broj poena: "+brojPoena;
+		}
+	</script>
+</body>
+
+</html>
